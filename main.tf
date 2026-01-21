@@ -26,9 +26,9 @@ resource "aws_s3_object" "index_html" {
 
   bucket       = aws_s3_bucket.mywebapp.bucket
   key          = "index.html"
-  source       = "../website/index.html"
+  source       = "./index.html"
   content_type = "text/html"
-  etag         = filemd5("../website/index.html")
+
 
 }
 
@@ -36,9 +36,9 @@ resource "aws_s3_object" "styles_css" {
 
   bucket       = aws_s3_bucket.mywebapp.bucket
   key          = "styles.css"
-  source       = "../website/styles.css"
+  source       = "./styles.css"
   content_type = "text/css"
-  etag         = filemd5("../website/styles.css")
+ 
 
 }
 
@@ -46,9 +46,8 @@ resource "aws_s3_object" "script_js" {
 
   bucket       = aws_s3_bucket.mywebapp.bucket
   key          = "script.js"
-  source       = "../website/script.js"
+  source       = "./script.js"
   content_type = "application/javascript"
-  etag         = filemd5("../website/script.js")
 
 }
 
