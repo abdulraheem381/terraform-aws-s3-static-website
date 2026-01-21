@@ -63,6 +63,9 @@ resource "aws_s3_bucket_website_configuration" "webapp" {
 resource "aws_s3_bucket_policy" "allow_access_from_outside" {
 
   bucket = aws_s3_bucket.mywebapp.id
+  
+  depends_on = [aws_s3_bucket_public_access_block.example]
+  
   policy = jsonencode(
 
     {
