@@ -1,44 +1,20 @@
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "6.8.0"
-    }
-    random = {
-      source  = "hashicorp/random"
-      version = "3.7.2"
-    }
-  }
-}
+resource "random_id" "bucket_id" {
 
-provider "aws" {
-  region = "ap-south-1"
-}
-
-resource "random_id" "rand-id" {
   byte_length = 8
+
 }
 
-resource "aws_s3_bucket" "web-bucket" {
-  bucket = "myweb-${random_id.rand-id.hex}"
+# Create a bucket 
+
+resource "aws_s3_bucket" "mywebapp" {
+
+  bucket = "mywebapp-${random_id.bucket_id.hex}"
+
 }
 
-resource "aws_s3_object" "index-html" {
-  bucket       = aws_s3_bucket.web-bucket.bucket
-  source       = "./index.html"
-  key          = "index.html"
-  content_type = "text/html"
-}
+resource "aws_s3_bucket_public_access_block" "example" {
 
-resource "aws_s3_object" "styles-css" {
-  bucket       = aws_s3_bucket.web-bucket.bucket
-  source       = "./styles.css"
-  key          = "styles.css"
-  content_type = "text/css"
-}
-
-resource "aws_s3_bucket_public_access_block" "public-access" {
-  bucket = aws_s3_bucket.web-bucket.id
+  bucket = aws_s3_bucket.mywebapp.id
 
   block_public_acls       = false
   block_public_policy     = false
@@ -46,30 +22,68 @@ resource "aws_s3_bucket_public_access_block" "public-access" {
   restrict_public_buckets = false
 }
 
-resource "aws_s3_bucket_policy" "mywebapp" {
-  bucket = aws_s3_bucket.web-bucket.id
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Sid       = "PublicReadGetObject",
-        Effect    = "Allow",
-        Principal = "*",
-        Action    = "s3:GetObject",
-        Resource  = "arn:aws:s3:::${aws_s3_bucket.web-bucket.id}/*"
-      }
-    ]
-  })
+resource "aws_s3_object" "index_html" {
+
+  bucket       = aws_s3_bucket.mywebapp.bucket
+  key          = "index.html"
+  source       = "../website/index.html"
+  content_type = "text/html"
+  etag         = filemd5("../website/index.html")
+
 }
 
-resource "aws_s3_bucket_website_configuration" "mywebapp" {
-  bucket = aws_s3_bucket.web-bucket.id
+resource "aws_s3_object" "styles_css" {
+
+  bucket       = aws_s3_bucket.mywebapp.bucket
+  key          = "styles.css"
+  source       = "../website/styles.css"
+  content_type = "text/css"
+  etag         = filemd5("../website/styles.css")
+
+}
+
+resource "aws_s3_object" "script_js" {
+
+  bucket       = aws_s3_bucket.mywebapp.bucket
+  key          = "script.js"
+  source       = "../website/script.js"
+  content_type = "application/javascript"
+  etag         = filemd5("../website/script.js")
+
+}
+
+resource "aws_s3_bucket_website_configuration" "webapp" {
+  bucket = aws_s3_bucket.mywebapp.id
 
   index_document {
+
     suffix = "index.html"
   }
 }
 
-output "aws_s3_bucket_website_configuration" {
-  value = aws_s3_bucket_website_configuration.mywebapp.website_endpoint
+resource "aws_s3_bucket_policy" "allow_access_from_outside" {
+
+  bucket = aws_s3_bucket.mywebapp.id
+  policy = jsonencode(
+
+    {
+      Version = "2012-10-17",
+      Statement = [
+        {
+          Sid       = "PublicReadGetObject",
+          Effect    = "Allow",
+          Principal = "*",
+          Action    = "s3:GetObject"
+          Resource  = "arn:aws:s3:::${aws_s3_bucket.mywebapp.id}/*"
+        }
+      ]
+    }
+  )
+
+}
+
+output "website_url" {
+
+  value = aws_s3_bucket_website_configuration.webapp.website_endpoint
+
 }
